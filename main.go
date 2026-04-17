@@ -11,45 +11,37 @@ import (
 	"syscall"
 
 	"github.com/schollz/croc/v10/src/cli"
+	"github.com/schollz/croc/v10/src/ui"
 	"github.com/schollz/croc/v10/src/utils"
 )
 
 func main() {
-	// "github.com/pkg/profile"
-	// go func() {
-	// 	for {
-	// 		f, err := os.Create("croc.pprof")
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 		runtime.GC() // get up-to-date statistics
-	// 		if err := pprof.WriteHeapProfile(f); err != nil {
-	// 			panic(err)
-	// 		}
-	// 		f.Close()
-	// 		time.Sleep(3 * time.Second)
-	// 		fmt.Println("wrote profile")
-	// 	}
-	// }()
-
 	// Create a channel to receive OS signals
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
-		if err := cli.Run(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		// Exit the program gracefully
-		utils.RemoveMarkedFiles()
-		os.Exit(0)
-	}()
+	// Determine whether to run CLI or GUI
+	if len(os.Args) > 1 {
+		// Run original CLI
+		go func() {
+			if err := cli.Run(); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			utils.RemoveMarkedFiles()
+			os.Exit(0)
+		}()
+	} else {
+		// Boot Fyne GUI
+		go func() {
+			ui.Run()
+			utils.RemoveMarkedFiles()
+			os.Exit(0)
+		}()
+	}
 
 	// Wait for a termination signal
 	<-sigs
 	utils.RemoveMarkedFiles()
-
-	// Exit the program gracefully
 	os.Exit(0)
 }
