@@ -17,8 +17,8 @@ func Run() {
 	a := app.New()
 	w := a.NewWindow("tonet")
 
-	// Set theme (we'll implement this in theme.go later, for now we can just use default)
-	// a.Settings().SetTheme(&customTheme{})
+	// Set theme
+	a.Settings().SetTheme(&customTheme{})
 
 	state := &AppState{
 		App:    a,
