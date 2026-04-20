@@ -1,18 +1,23 @@
 package ui
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/yasufad/tonet/src/croc"
+	"github.com/yasufad/tonet/src/models"
+	"github.com/yasufad/tonet/src/utils"
 )
 
 func makeSendTab(state *AppState) fyne.CanvasObject {
-	// UI Elements
+	var selectedFiles []string
+
 	selectedFilesLabel := widget.NewLabel("No files selected")
 	selectedFilesLabel.Wrapping = fyne.TextWrapWord
 
-	// File selection buttons
 	selectFilesBtn := widget.NewButton("Select Files", func() {
 		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -20,7 +25,8 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				return
 			}
 			if reader != nil {
-				selectedFilesLabel.SetText("Selected file: " + reader.URI().Name())
+				selectedFiles = []string{reader.URI().Path()}
+				selectedFilesLabel.SetText("Selected: " + reader.URI().Name())
 			}
 		}, state.Window)
 	})
@@ -32,40 +38,87 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				return
 			}
 			if uri != nil {
-				selectedFilesLabel.SetText("Selected folder: " + uri.Name())
+				selectedFiles = []string{uri.Path()}
+				selectedFilesLabel.SetText("Selected: " + uri.Name())
 			}
 		}, state.Window)
 	})
 
-	// Options
 	hashAlgoSelect := widget.NewSelect([]string{"xxhash", "imohash", "md5"}, nil)
 	hashAlgoSelect.SetSelected("xxhash")
-	
+
 	zipFolderCheck := widget.NewCheck("Zip folder", nil)
 	zipFolderCheck.SetChecked(true)
 
-	// Action buttons
-	sendBtn := widget.NewButton("Send", func() {
-		// Placeholder for sending logic
-	})
-	sendBtn.Importance = widget.HighImportance
+	gitIgnoreCheck := widget.NewCheck("Respect .gitignore", nil)
 
-	cancelBtn := widget.NewButton("Cancel", func() {
-		// Placeholder for cancel logic
-	})
+	codeLabel := widget.NewLabel("")
+	codeLabel.Wrapping = fyne.TextWrapWord
 
-	// Progress UI
 	progressBar := widget.NewProgressBar()
 	progressLabel := widget.NewLabel("Ready")
 
-	// Layout assembly
+	var sendBtn *widget.Button
+	sendBtn = widget.NewButton("Send", func() {
+		if len(selectedFiles) == 0 {
+			dialog.ShowError(fmt.Errorf("no files selected"), state.Window)
+			return
+		}
+
+		sendBtn.Disable()
+		progressLabel.SetText("Preparing files...")
+
+		go func() {
+			opts := croc.Options{
+				IsSender:       true,
+				RelayAddress:   models.DEFAULT_RELAY,
+				RelayAddress6:  models.DEFAULT_RELAY6,
+				RelayPorts:     []string{"9009", "9010", "9011", "9012", "9013"},
+				RelayPassword:  models.DEFAULT_PASSPHRASE,
+				SharedSecret:   utils.GetRandomName(),
+				HashAlgorithm:  hashAlgoSelect.Selected,
+				ZipFolder:      zipFolderCheck.Checked,
+				GitIgnore:      gitIgnoreCheck.Checked,
+				NoPrompt:       true,
+			}
+
+			fileInfos, emptyFolders, totalFolders, err := croc.GetFilesInfo(selectedFiles, opts.ZipFolder, opts.GitIgnore, []string{})
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+				sendBtn.Enable()
+				return
+			}
+
+			codeLabel.SetText("Code: " + opts.SharedSecret)
+			progressLabel.SetText("Connecting to relay...")
+
+			cr, err := croc.New(opts)
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+				sendBtn.Enable()
+				return
+			}
+
+			progressLabel.SetText("Sending...")
+			err = cr.Send(fileInfos, emptyFolders, totalFolders)
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+			} else {
+				progressLabel.SetText("Transfer complete!")
+				dialog.ShowInformation("Success", "Files sent successfully!", state.Window)
+			}
+			sendBtn.Enable()
+		}()
+	})
+	sendBtn.Importance = widget.HighImportance
+
 	filesBox := container.NewHBox(selectFilesBtn, selectFolderBtn)
 	optionsBox := container.NewVBox(
 		widget.NewLabel("Options:"),
-		container.NewHBox(widget.NewLabel("Hash Algorithm:"), hashAlgoSelect),
+		container.NewHBox(widget.NewLabel("Hash:"), hashAlgoSelect),
 		zipFolderCheck,
+		gitIgnoreCheck,
 	)
-	actionBox := container.NewHBox(sendBtn, cancelBtn)
 
 	content := container.NewVBox(
 		widget.NewLabelWithStyle("Send Files", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -74,8 +127,9 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		widget.NewSeparator(),
 		optionsBox,
 		widget.NewSeparator(),
-		actionBox,
+		sendBtn,
 		widget.NewSeparator(),
+		codeLabel,
 		progressLabel,
 		progressBar,
 	)
