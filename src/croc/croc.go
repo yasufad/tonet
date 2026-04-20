@@ -687,14 +687,14 @@ func (c *Client) Send(filesInfo []FileInfo, emptyFoldersToTransfer []FileInfo, t
 
 On the other computer run:
 (For Windows)
-    croc %[2]s%[1]s
+    tonet %[2]s%[1]s
 (For Linux/macOS)
-    CROC_SECRET=%[1]q croc %[2]s
+    TONET_SECRET=%[1]q tonet %[2]s
 `, c.Options.SharedSecret, flags.String())
 	if !c.Options.DisableClipboard {
 		clipboardText := c.Options.SharedSecret
 		if c.Options.ExtendedClipboard {
-			clipboardText = fmt.Sprintf("CROC_SECRET=%q croc %s", c.Options.SharedSecret, strings.TrimSpace(flags.String()))
+			clipboardText = fmt.Sprintf("TONET_SECRET=%q tonet %s", c.Options.SharedSecret, strings.TrimSpace(flags.String()))
 		}
 		copyToClipboard(clipboardText, c.Options.Quiet, c.Options.ExtendedClipboard)
 	}
