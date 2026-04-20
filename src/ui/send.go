@@ -72,6 +72,8 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 	noMultiCheck := widget.NewCheck("Disable multiplexing", nil)
 	onlyLocalCheck := widget.NewCheck("Force local connections only", nil)
 	showQrCheck := widget.NewCheck("Show QR code for mobile receive", nil)
+	throttleEntry := widget.NewEntry()
+	throttleEntry.SetPlaceHolder("Upload speed limit (e.g. 500k, 1m)")
 	excludeEntry := widget.NewEntry()
 	excludeEntry.SetPlaceHolder("Exclude patterns (comma-separated, e.g. node_modules,.git)")
 
@@ -115,6 +117,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				NoMultiplexing: noMultiCheck.Checked,
 				OnlyLocal:      onlyLocalCheck.Checked,
 				ShowQrCode:     showQrCheck.Checked,
+				ThrottleUpload: throttleEntry.Text,
 				NoPrompt:       true,
 			}
 
@@ -187,6 +190,8 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		noMultiCheck,
 		onlyLocalCheck,
 		showQrCheck,
+		widget.NewLabel("Upload speed limit:"),
+		throttleEntry,
 		widget.NewLabel("Exclude:"),
 		excludeEntry,
 	)
