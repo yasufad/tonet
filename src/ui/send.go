@@ -70,6 +70,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 	noCompressCheck := widget.NewCheck("Disable compression", nil)
 	disableLocalCheck := widget.NewCheck("Disable local relay", nil)
 	noMultiCheck := widget.NewCheck("Disable multiplexing", nil)
+	onlyLocalCheck := widget.NewCheck("Force local connections only", nil)
 	excludeEntry := widget.NewEntry()
 	excludeEntry.SetPlaceHolder("Exclude patterns (comma-separated, e.g. node_modules,.git)")
 
@@ -111,6 +112,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				NoCompress:     noCompressCheck.Checked,
 				DisableLocal:   disableLocalCheck.Checked,
 				NoMultiplexing: noMultiCheck.Checked,
+				OnlyLocal:      onlyLocalCheck.Checked,
 				NoPrompt:       true,
 			}
 
@@ -181,6 +183,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		noCompressCheck,
 		disableLocalCheck,
 		noMultiCheck,
+		onlyLocalCheck,
 		widget.NewLabel("Exclude:"),
 		excludeEntry,
 	)
