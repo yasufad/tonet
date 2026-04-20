@@ -35,6 +35,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 	})
 
 	overwriteCheck := widget.NewCheck("Overwrite existing files", nil)
+	stdoutCheck := widget.NewCheck("Redirect to stdout", nil)
 
 	progressBar := widget.NewProgressBar()
 	progressLabel := widget.NewLabel("Ready")
@@ -65,6 +66,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 				RelayPassword: settings.RelayPassword,
 				Curve:         settings.Curve,
 				Overwrite:     overwriteCheck.Checked,
+				Stdout:        stdoutCheck.Checked,
 				NoPrompt:      true,
 			}
 
@@ -114,6 +116,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 	optionsBox := container.NewVBox(
 		widget.NewLabel("Options:"),
 		overwriteCheck,
+		stdoutCheck,
 	)
 
 	content := container.NewVBox(
