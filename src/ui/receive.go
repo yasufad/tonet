@@ -113,27 +113,30 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 		codeEntry,
 	)
 
-	dirBox := container.NewVBox(
+	basicOptions := container.NewVBox(
 		selectDirBtn,
 		outputDirLabel,
+		overwriteCheck,
 	)
 
-	optionsBox := container.NewVBox(
-		widget.NewLabel("Options:"),
-		overwriteCheck,
+	advancedOptions := container.NewVBox(
 		stdoutCheck,
 		onlyLocalCheck,
 		widget.NewLabel("Sender IP:"),
 		ipEntry,
 	)
 
+	accordion := widget.NewAccordion(
+		widget.NewAccordionItem("Options", basicOptions),
+		widget.NewAccordionItem("Advanced", advancedOptions),
+	)
+	accordion.Open(0)
+
 	content := container.NewVBox(
 		widget.NewLabelWithStyle("Receive Files", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		codeBox,
 		widget.NewSeparator(),
-		dirBox,
-		widget.NewSeparator(),
-		optionsBox,
+		accordion,
 		widget.NewSeparator(),
 		receiveBtn,
 		widget.NewSeparator(),
