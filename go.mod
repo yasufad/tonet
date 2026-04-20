@@ -1,4 +1,4 @@
-module github.com/schollz/croc/v10
+module github.com/yasufad/tonet
 
 go 1.25.0
 
