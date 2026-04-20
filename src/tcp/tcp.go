@@ -12,9 +12,9 @@ import (
 	log "github.com/schollz/logger"
 	"github.com/schollz/pake/v3"
 
-	"github.com/schollz/croc/v10/src/comm"
-	"github.com/schollz/croc/v10/src/crypt"
-	"github.com/schollz/croc/v10/src/models"
+	"github.com/yasufad/tonet/src/comm"
+	"github.com/yasufad/tonet/src/crypt"
+	"github.com/yasufad/tonet/src/models"
 )
 
 type server struct {

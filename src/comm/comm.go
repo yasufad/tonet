@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/magisterquis/connectproxy"
-	"github.com/schollz/croc/v10/src/utils"
+	"github.com/yasufad/tonet/src/utils"
 	log "github.com/schollz/logger"
 	"golang.org/x/net/proxy"
 )

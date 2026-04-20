@@ -15,12 +15,12 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/schollz/cli/v2"
-	"github.com/schollz/croc/v10/src/comm"
-	"github.com/schollz/croc/v10/src/croc"
-	"github.com/schollz/croc/v10/src/mnemonicode"
-	"github.com/schollz/croc/v10/src/models"
-	"github.com/schollz/croc/v10/src/tcp"
-	"github.com/schollz/croc/v10/src/utils"
+	"github.com/yasufad/tonet/src/comm"
+	"github.com/yasufad/tonet/src/croc"
+	"github.com/yasufad/tonet/src/mnemonicode"
+	"github.com/yasufad/tonet/src/models"
+	"github.com/yasufad/tonet/src/tcp"
+	"github.com/yasufad/tonet/src/utils"
 	log "github.com/schollz/logger"
 	"github.com/schollz/pake/v3"
 )

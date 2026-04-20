@@ -3,9 +3,9 @@ package message
 import (
 	"encoding/json"
 
-	"github.com/schollz/croc/v10/src/comm"
-	"github.com/schollz/croc/v10/src/compress"
-	"github.com/schollz/croc/v10/src/crypt"
+	"github.com/yasufad/tonet/src/comm"
+	"github.com/yasufad/tonet/src/compress"
+	"github.com/yasufad/tonet/src/crypt"
 	log "github.com/schollz/logger"
 )
 

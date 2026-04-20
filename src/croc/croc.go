@@ -32,13 +32,13 @@ import (
 	"golang.org/x/term"
 	"golang.org/x/time/rate"
 
-	"github.com/schollz/croc/v10/src/comm"
-	"github.com/schollz/croc/v10/src/compress"
-	"github.com/schollz/croc/v10/src/crypt"
-	"github.com/schollz/croc/v10/src/message"
-	"github.com/schollz/croc/v10/src/models"
-	"github.com/schollz/croc/v10/src/tcp"
-	"github.com/schollz/croc/v10/src/utils"
+	"github.com/yasufad/tonet/src/comm"
+	"github.com/yasufad/tonet/src/compress"
+	"github.com/yasufad/tonet/src/crypt"
+	"github.com/yasufad/tonet/src/message"
+	"github.com/yasufad/tonet/src/models"
+	"github.com/yasufad/tonet/src/tcp"
+	"github.com/yasufad/tonet/src/utils"
 )
 
 var (
