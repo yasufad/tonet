@@ -36,6 +36,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 
 	overwriteCheck := widget.NewCheck("Overwrite existing files", nil)
 	stdoutCheck := widget.NewCheck("Redirect to stdout", nil)
+	onlyLocalCheck := widget.NewCheck("Force local connections only", nil)
 
 	progressBar := widget.NewProgressBar()
 	progressLabel := widget.NewLabel("Ready")
@@ -67,6 +68,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 				Curve:         settings.Curve,
 				Overwrite:     overwriteCheck.Checked,
 				Stdout:        stdoutCheck.Checked,
+				OnlyLocal:     onlyLocalCheck.Checked,
 				NoPrompt:      true,
 			}
 
@@ -117,6 +119,7 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 		widget.NewLabel("Options:"),
 		overwriteCheck,
 		stdoutCheck,
+		onlyLocalCheck,
 	)
 
 	content := container.NewVBox(
