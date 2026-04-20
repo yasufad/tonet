@@ -71,6 +71,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 	disableLocalCheck := widget.NewCheck("Disable local relay", nil)
 	noMultiCheck := widget.NewCheck("Disable multiplexing", nil)
 	onlyLocalCheck := widget.NewCheck("Force local connections only", nil)
+	showQrCheck := widget.NewCheck("Show QR code for mobile receive", nil)
 	excludeEntry := widget.NewEntry()
 	excludeEntry.SetPlaceHolder("Exclude patterns (comma-separated, e.g. node_modules,.git)")
 
@@ -113,6 +114,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				DisableLocal:   disableLocalCheck.Checked,
 				NoMultiplexing: noMultiCheck.Checked,
 				OnlyLocal:      onlyLocalCheck.Checked,
+				ShowQrCode:     showQrCheck.Checked,
 				NoPrompt:       true,
 			}
 
@@ -184,6 +186,7 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		disableLocalCheck,
 		noMultiCheck,
 		onlyLocalCheck,
+		showQrCheck,
 		widget.NewLabel("Exclude:"),
 		excludeEntry,
 	)
