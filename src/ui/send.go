@@ -175,16 +175,16 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 	sendBtn.Importance = widget.HighImportance
 
 	filesBox := container.NewHBox(selectFilesBtn, selectFolderBtn)
-	optionsBox := container.NewVBox(
-		widget.NewLabel("Options:"),
+
+	basicOptions := container.NewVBox(
 		container.NewHBox(widget.NewLabel("Hash:"), hashAlgoSelect),
 		zipFolderCheck,
 		gitIgnoreCheck,
-		widget.NewSeparator(),
 		customCodeCheck,
 		customCodeEntry,
-		widget.NewSeparator(),
-		widget.NewLabel("Advanced:"),
+	)
+
+	advancedOptions := container.NewVBox(
 		noCompressCheck,
 		disableLocalCheck,
 		noMultiCheck,
@@ -196,12 +196,18 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		excludeEntry,
 	)
 
+	accordion := widget.NewAccordion(
+		widget.NewAccordionItem("Options", basicOptions),
+		widget.NewAccordionItem("Advanced", advancedOptions),
+	)
+	accordion.Open(0) // Open basic options by default
+
 	content := container.NewVBox(
 		widget.NewLabelWithStyle("Send Files", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		filesBox,
 		selectedFilesLabel,
 		widget.NewSeparator(),
-		optionsBox,
+		accordion,
 		widget.NewSeparator(),
 		sendBtn,
 		widget.NewSeparator(),
