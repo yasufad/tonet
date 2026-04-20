@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -65,6 +66,12 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		}
 	}
 
+	// Advanced options
+	noCompressCheck := widget.NewCheck("Disable compression", nil)
+	disableLocalCheck := widget.NewCheck("Disable local relay", nil)
+	excludeEntry := widget.NewEntry()
+	excludeEntry.SetPlaceHolder("Exclude patterns (comma-separated, e.g. node_modules,.git)")
+
 	codeLabel := widget.NewLabel("")
 	codeLabel.Wrapping = fyne.TextWrapWord
 
@@ -100,7 +107,19 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 				ZipFolder:      zipFolderCheck.Checked,
 				GitIgnore:      gitIgnoreCheck.Checked,
 				Curve:          settings.Curve,
+				NoCompress:     noCompressCheck.Checked,
+				DisableLocal:   disableLocalCheck.Checked,
 				NoPrompt:       true,
+			}
+
+			// Parse exclude patterns
+			if excludeEntry.Text != "" {
+				for _, v := range strings.Split(excludeEntry.Text, ",") {
+					v = strings.TrimSpace(v)
+					if v != "" {
+						opts.Exclude = append(opts.Exclude, v)
+					}
+				}
 			}
 
 			if opts.RelayAddress == "" {
@@ -155,6 +174,12 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		widget.NewSeparator(),
 		customCodeCheck,
 		customCodeEntry,
+		widget.NewSeparator(),
+		widget.NewLabel("Advanced:"),
+		noCompressCheck,
+		disableLocalCheck,
+		widget.NewLabel("Exclude:"),
+		excludeEntry,
 	)
 
 	content := container.NewVBox(
