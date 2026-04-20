@@ -1,61 +1,149 @@
 package ui
 
 import (
+	"encoding/json"
+	"os"
+	"path"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/yasufad/tonet/src/models"
+	"github.com/yasufad/tonet/src/utils"
 )
 
+type Settings struct {
+	RelayAddress  string `json:"relay_address"`
+	RelayAddress6 string `json:"relay_address6"`
+	RelayPassword string `json:"relay_password"`
+	Curve         string `json:"curve"`
+	Socks5Proxy   string `json:"socks5_proxy"`
+	HttpProxy     string `json:"http_proxy"`
+}
+
 func makeSettingsTab(state *AppState) fyne.CanvasObject {
-	// UI Elements
+	settings := loadSettings()
+
 	relayEntry := widget.NewEntry()
-	relayEntry.SetPlaceHolder("Custom relay address (e.g. relay.example.com:9009)")
+	relayEntry.SetText(settings.RelayAddress)
+	relayEntry.SetPlaceHolder(models.DEFAULT_RELAY)
 
-	relayIPv6Entry := widget.NewEntry()
-	relayIPv6Entry.SetPlaceHolder("Custom IPv6 relay address")
+	relay6Entry := widget.NewEntry()
+	relay6Entry.SetText(settings.RelayAddress6)
+	relay6Entry.SetPlaceHolder(models.DEFAULT_RELAY6)
 
-	relayPassEntry := widget.NewPasswordEntry()
-	relayPassEntry.SetPlaceHolder("Relay password (if required)")
+	passwordEntry := widget.NewPasswordEntry()
+	passwordEntry.SetText(settings.RelayPassword)
+	passwordEntry.SetPlaceHolder(models.DEFAULT_PASSPHRASE)
 
 	curveSelect := widget.NewSelect([]string{"p256", "p384", "p521", "siec"}, nil)
-	curveSelect.SetSelected("p256") // default
+	if settings.Curve != "" {
+		curveSelect.SetSelected(settings.Curve)
+	} else {
+		curveSelect.SetSelected("p256")
+	}
 
 	socks5Entry := widget.NewEntry()
-	socks5Entry.SetPlaceHolder("SOCKS5 proxy (e.g. 127.0.0.1:9050)")
+	socks5Entry.SetText(settings.Socks5Proxy)
+	socks5Entry.SetPlaceHolder("e.g., 127.0.0.1:9050")
 
 	httpProxyEntry := widget.NewEntry()
-	httpProxyEntry.SetPlaceHolder("HTTP proxy (e.g. 127.0.0.1:8080)")
-
-	throttleEntry := widget.NewEntry()
-	throttleEntry.SetPlaceHolder("Upload throttle (e.g. 500k)")
-
-	classicModeCheck := widget.NewCheck("Classic mode (CROC_SECRET environmental behaviour)", nil)
+	httpProxyEntry.SetText(settings.HttpProxy)
+	httpProxyEntry.SetPlaceHolder("e.g., http://proxy:8080")
 
 	saveBtn := widget.NewButton("Save Settings", func() {
-		// Placeholder for saving settings logic (writes to config dir)
+		newSettings := Settings{
+			RelayAddress:  relayEntry.Text,
+			RelayAddress6: relay6Entry.Text,
+			RelayPassword: passwordEntry.Text,
+			Curve:         curveSelect.Selected,
+			Socks5Proxy:   socks5Entry.Text,
+			HttpProxy:     httpProxyEntry.Text,
+		}
+
+		if err := saveSettings(newSettings); err != nil {
+			dialog.ShowError(err, state.Window)
+		} else {
+			dialog.ShowInformation("Success", "Settings saved successfully!", state.Window)
+		}
 	})
 	saveBtn.Importance = widget.HighImportance
 
-	// Form layout
-	form := widget.NewForm(
-		widget.NewFormItem("Relay Address", relayEntry),
-		widget.NewFormItem("Relay IPv6", relayIPv6Entry),
-		widget.NewFormItem("Relay Password", relayPassEntry),
-		widget.NewFormItem("Encryption Curve", curveSelect),
-		widget.NewFormItem("SOCKS5 Proxy", socks5Entry),
-		widget.NewFormItem("HTTP Proxy", httpProxyEntry),
-		widget.NewFormItem("Upload Throttle", throttleEntry),
-	)
+	resetBtn := widget.NewButton("Reset to Defaults", func() {
+		relayEntry.SetText(models.DEFAULT_RELAY)
+		relay6Entry.SetText(models.DEFAULT_RELAY6)
+		passwordEntry.SetText(models.DEFAULT_PASSPHRASE)
+		curveSelect.SetSelected("p256")
+		socks5Entry.SetText("")
+		httpProxyEntry.SetText("")
+	})
 
 	content := container.NewVBox(
-		widget.NewLabelWithStyle("Application Settings", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		form,
+		widget.NewLabelWithStyle("Settings", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Relay Configuration:"),
+		widget.NewLabel("IPv4 Relay Address:"),
+		relayEntry,
+		widget.NewLabel("IPv6 Relay Address:"),
+		relay6Entry,
+		widget.NewLabel("Relay Password:"),
+		passwordEntry,
 		widget.NewSeparator(),
-		classicModeCheck,
+		widget.NewLabel("Encryption Curve:"),
+		curveSelect,
 		widget.NewSeparator(),
-		saveBtn,
+		widget.NewLabel("Proxy Settings:"),
+		widget.NewLabel("SOCKS5 Proxy:"),
+		socks5Entry,
+		widget.NewLabel("HTTP Proxy:"),
+		httpProxyEntry,
+		widget.NewSeparator(),
+		container.NewHBox(saveBtn, resetBtn),
 	)
 
-	// Wrap in a scroll container in case it exceeds window height
 	return container.NewPadded(container.NewVScroll(content))
+}
+
+func getSettingsFile() string {
+	configDir, err := utils.GetConfigDir(true)
+	if err != nil {
+		return ""
+	}
+	return path.Join(configDir, "tonet-settings.json")
+}
+
+func loadSettings() Settings {
+	settings := Settings{
+		RelayAddress:  models.DEFAULT_RELAY,
+		RelayAddress6: models.DEFAULT_RELAY6,
+		RelayPassword: models.DEFAULT_PASSPHRASE,
+		Curve:         "p256",
+	}
+
+	file := getSettingsFile()
+	if file == "" {
+		return settings
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return settings
+	}
+
+	json.Unmarshal(data, &settings)
+	return settings
+}
+
+func saveSettings(settings Settings) error {
+	file := getSettingsFile()
+	if file == "" {
+		return nil
+	}
+
+	data, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(file, data, 0644)
 }
