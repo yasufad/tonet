@@ -14,8 +14,8 @@ type AppState struct {
 
 // Run boots the Fyne GUI application
 func Run() {
-	a := app.New()
-	w := a.NewWindow("tonet")
+	a := app.NewWithID("com.yasufad.tonet")
+	w := a.NewWindow("Tonet")
 
 	// Set theme
 	a.Settings().SetTheme(&customTheme{})
@@ -36,7 +36,7 @@ func Run() {
 
 	w.SetContent(tabs)
 	w.Resize(fyne.NewSize(600, 400))
-	
+
 	// App runs blocking until window is closed
 	w.ShowAndRun()
 }
