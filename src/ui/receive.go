@@ -1,18 +1,24 @@
 package ui
 
 import (
+	"fmt"
+	"os"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/yasufad/tonet/src/croc"
+	"github.com/yasufad/tonet/src/models"
 )
 
 func makeReceiveTab(state *AppState) fyne.CanvasObject {
-	// UI Elements
+	outputDir, _ := os.Getwd()
+
 	codeEntry := widget.NewEntry()
 	codeEntry.SetPlaceHolder("Enter receive code (e.g., fast-pizza-dog)")
 
-	outputDirLabel := widget.NewLabel("Output directory: (current)")
+	outputDirLabel := widget.NewLabel("Output: " + outputDir)
 	outputDirLabel.Wrapping = fyne.TextWrapWord
 
 	selectDirBtn := widget.NewButton("Select Output Directory", func() {
@@ -22,30 +28,63 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 				return
 			}
 			if uri != nil {
-				outputDirLabel.SetText("Output directory: " + uri.Path())
+				outputDir = uri.Path()
+				outputDirLabel.SetText("Output: " + outputDir)
 			}
 		}, state.Window)
 	})
 
-	// Options
 	overwriteCheck := widget.NewCheck("Overwrite existing files", nil)
-	
-	// Action buttons
-	receiveBtn := widget.NewButton("Receive", func() {
-		// Placeholder for receive logic
+
+	progressBar := widget.NewProgressBar()
+	progressLabel := widget.NewLabel("Ready")
+
+	var receiveBtn *widget.Button
+	receiveBtn = widget.NewButton("Receive", func() {
+		code := codeEntry.Text
+		if code == "" {
+			dialog.ShowError(fmt.Errorf("please enter a receive code"), state.Window)
+			return
+		}
+
+		receiveBtn.Disable()
+		progressLabel.SetText("Connecting...")
+
+		go func() {
+			currentDir, _ := os.Getwd()
+			os.Chdir(outputDir)
+			defer os.Chdir(currentDir)
+
+			opts := croc.Options{
+				IsSender:      false,
+				SharedSecret:  code,
+				RelayAddress:  models.DEFAULT_RELAY,
+				RelayAddress6: models.DEFAULT_RELAY6,
+				RelayPassword: models.DEFAULT_PASSPHRASE,
+				Overwrite:     overwriteCheck.Checked,
+				NoPrompt:      true,
+			}
+
+			cr, err := croc.New(opts)
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+				receiveBtn.Enable()
+				return
+			}
+
+			progressLabel.SetText("Receiving...")
+			err = cr.Receive()
+			if err != nil {
+				dialog.ShowError(err, state.Window)
+			} else {
+				progressLabel.SetText("Transfer complete!")
+				dialog.ShowInformation("Success", "Files received successfully!", state.Window)
+			}
+			receiveBtn.Enable()
+		}()
 	})
 	receiveBtn.Importance = widget.HighImportance
 
-	cancelBtn := widget.NewButton("Cancel", func() {
-		// Placeholder for cancel logic
-	})
-
-	// Progress UI
-	progressBar := widget.NewProgressBar()
-	progressLabel := widget.NewLabel("Ready")
-	fileListLabel := widget.NewLabel("")
-
-	// Layout assembly
 	codeBox := container.NewVBox(
 		widget.NewLabel("Secret Code:"),
 		codeEntry,
@@ -61,8 +100,6 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 		overwriteCheck,
 	)
 
-	actionBox := container.NewHBox(receiveBtn, cancelBtn)
-
 	content := container.NewVBox(
 		widget.NewLabelWithStyle("Receive Files", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		codeBox,
@@ -71,11 +108,10 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 		widget.NewSeparator(),
 		optionsBox,
 		widget.NewSeparator(),
-		actionBox,
+		receiveBtn,
 		widget.NewSeparator(),
 		progressLabel,
 		progressBar,
-		fileListLabel,
 	)
 
 	return container.NewPadded(content)
