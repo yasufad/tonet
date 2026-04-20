@@ -31,6 +31,7 @@ func Run() {
 		container.NewTabItem("Receive", makeReceiveTab(state)),
 		container.NewTabItem("Relay", makeRelayTab(state)),
 		container.NewTabItem("Settings", makeSettingsTab(state)),
+		container.NewTabItem("Help", makeHelpTab(state)),
 	)
 	tabs.SetTabLocation(container.TabLocationTop)
 
