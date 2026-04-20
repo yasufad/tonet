@@ -1,76 +1,123 @@
 package ui
 
 import (
+	"context"
+	"fmt"
+	"strconv"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/yasufad/tonet/src/models"
+	"github.com/yasufad/tonet/src/tcp"
 )
 
 func makeRelayTab(state *AppState) fyne.CanvasObject {
-	// UI Elements
+	var cancel context.CancelFunc
+
 	hostEntry := widget.NewEntry()
-	hostEntry.SetPlaceHolder("Optional: host/IP to bind to (default: all interfaces)")
+	hostEntry.SetPlaceHolder("Leave empty for all interfaces")
 
-	portsEntry := widget.NewEntry()
-	portsEntry.SetText("9009,9010,9011,9012,9013") // default ports
-	
-	statusLabel := widget.NewLabel("Relay Status: Stopped")
-	statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	portEntry := widget.NewEntry()
+	portEntry.SetText("9009")
+	portEntry.SetPlaceHolder("9009")
 
-	// Action buttons
-	var startBtn *widget.Button
-	var stopBtn *widget.Button
+	transfersEntry := widget.NewEntry()
+	transfersEntry.SetText("4")
+	transfersEntry.SetPlaceHolder("4")
 
-	startBtn = widget.NewButton("Start Relay", func() {
-		// Placeholder for starting relay
-		statusLabel.SetText("Relay Status: Running")
-		startBtn.Disable()
-		stopBtn.Enable()
+	statusLabel := widget.NewLabel("Relay stopped")
+	logLabel := widget.NewLabel("")
+	logLabel.Wrapping = fyne.TextWrapWord
+
+	var toggleBtn *widget.Button
+	toggleBtn = widget.NewButton("Start Relay", func() {
+		if cancel != nil {
+			// Stop relay
+			cancel()
+			cancel = nil
+			statusLabel.SetText("Relay stopped")
+			toggleBtn.SetText("Start Relay")
+			toggleBtn.Importance = widget.MediumImportance
+			return
+		}
+
+		// Start relay
+		basePort, err := strconv.Atoi(portEntry.Text)
+		if err != nil || basePort < 1 || basePort > 65530 {
+			statusLabel.SetText("Error: Invalid port number")
+			return
+		}
+
+		transfers, err := strconv.Atoi(transfersEntry.Text)
+		if err != nil || transfers < 2 {
+			statusLabel.SetText("Error: Transfers must be at least 2")
+			return
+		}
+
+		host := hostEntry.Text
+		ports := make([]string, transfers)
+		for i := 0; i < transfers; i++ {
+			ports[i] = strconv.Itoa(basePort + i)
+		}
+
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		cancel = cancelFunc
+
+		statusLabel.SetText(fmt.Sprintf("Relay running on ports %s-%s", ports[0], ports[len(ports)-1]))
+		toggleBtn.SetText("Stop Relay")
+		toggleBtn.Importance = widget.HighImportance
+
+		go func() {
+			// Start transfer ports
+			for i := 1; i < len(ports); i++ {
+				port := ports[i]
+				go func(p string) {
+					tcp.Run("info", host, p, models.DEFAULT_PASSPHRASE)
+				}(port)
+			}
+
+			// Start main port (blocking)
+			tcpPorts := ""
+			for i := 1; i < len(ports); i++ {
+				if i > 1 {
+					tcpPorts += ","
+				}
+				tcpPorts += ports[i]
+			}
+			tcp.Run("info", host, ports[0], models.DEFAULT_PASSPHRASE, tcpPorts)
+
+			<-ctx.Done()
+		}()
 	})
-	startBtn.Importance = widget.HighImportance
+	toggleBtn.Importance = widget.MediumImportance
 
-	stopBtn = widget.NewButton("Stop Relay", func() {
-		// Placeholder for stopping relay
-		statusLabel.SetText("Relay Status: Stopped")
-		startBtn.Enable()
-		stopBtn.Disable()
-	})
-	stopBtn.Disable()
-
-	// Connection log
-	logData := []string{"Ready to accept connections."}
-	logList := widget.NewList(
-		func() int {
-			return len(logData)
-		},
-		func() fyne.CanvasObject {
-			return widget.NewLabel("Template Label")
-		},
-		func(i widget.ListItemID, o fyne.CanvasObject) {
-			o.(*widget.Label).SetText(logData[i])
-		},
-	)
-
-	// Layout assembly
-	configBox := container.NewVBox(
-		widget.NewLabel("Host bind address:"),
+	hostBox := container.NewVBox(
+		widget.NewLabel("Host (optional):"),
 		hostEntry,
-		widget.NewLabel("Ports (comma-separated):"),
-		portsEntry,
 	)
 
-	actionBox := container.NewHBox(startBtn, stopBtn)
+	portBox := container.NewVBox(
+		widget.NewLabel("Base Port:"),
+		portEntry,
+	)
+
+	transfersBox := container.NewVBox(
+		widget.NewLabel("Number of Transfer Ports:"),
+		transfersEntry,
+	)
 
 	content := container.NewVBox(
-		widget.NewLabelWithStyle("Relay Management", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		configBox,
+		widget.NewLabelWithStyle("Relay Server", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		hostBox,
+		portBox,
+		transfersBox,
+		widget.NewSeparator(),
+		toggleBtn,
 		widget.NewSeparator(),
 		statusLabel,
-		actionBox,
-		widget.NewSeparator(),
-		widget.NewLabel("Connection Log:"),
+		logLabel,
 	)
 
-	// We use a Border layout to let the logList expand and fill remaining space
-	return container.NewPadded(container.NewBorder(content, nil, nil, nil, logList))
+	return container.NewPadded(content)
 }
