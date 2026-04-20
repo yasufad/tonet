@@ -55,14 +55,30 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 			os.Chdir(outputDir)
 			defer os.Chdir(currentDir)
 
+			settings := loadSettings()
+
 			opts := croc.Options{
 				IsSender:      false,
 				SharedSecret:  code,
-				RelayAddress:  models.DEFAULT_RELAY,
-				RelayAddress6: models.DEFAULT_RELAY6,
-				RelayPassword: models.DEFAULT_PASSPHRASE,
+				RelayAddress:  settings.RelayAddress,
+				RelayAddress6: settings.RelayAddress6,
+				RelayPassword: settings.RelayPassword,
+				Curve:         settings.Curve,
 				Overwrite:     overwriteCheck.Checked,
 				NoPrompt:      true,
+			}
+
+			if opts.RelayAddress == "" {
+				opts.RelayAddress = models.DEFAULT_RELAY
+			}
+			if opts.RelayAddress6 == "" {
+				opts.RelayAddress6 = models.DEFAULT_RELAY6
+			}
+			if opts.RelayPassword == "" {
+				opts.RelayPassword = models.DEFAULT_PASSPHRASE
+			}
+			if opts.Curve == "" {
+				opts.Curve = "p256"
 			}
 
 			cr, err := croc.New(opts)

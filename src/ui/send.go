@@ -69,17 +69,33 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		progressLabel.SetText("Preparing files...")
 
 		go func() {
+			settings := loadSettings()
+
 			opts := croc.Options{
 				IsSender:       true,
-				RelayAddress:   models.DEFAULT_RELAY,
-				RelayAddress6:  models.DEFAULT_RELAY6,
+				RelayAddress:   settings.RelayAddress,
+				RelayAddress6:  settings.RelayAddress6,
 				RelayPorts:     []string{"9009", "9010", "9011", "9012", "9013"},
-				RelayPassword:  models.DEFAULT_PASSPHRASE,
+				RelayPassword:  settings.RelayPassword,
 				SharedSecret:   utils.GetRandomName(),
 				HashAlgorithm:  hashAlgoSelect.Selected,
 				ZipFolder:      zipFolderCheck.Checked,
 				GitIgnore:      gitIgnoreCheck.Checked,
+				Curve:          settings.Curve,
 				NoPrompt:       true,
+			}
+
+			if opts.RelayAddress == "" {
+				opts.RelayAddress = models.DEFAULT_RELAY
+			}
+			if opts.RelayAddress6 == "" {
+				opts.RelayAddress6 = models.DEFAULT_RELAY6
+			}
+			if opts.RelayPassword == "" {
+				opts.RelayPassword = models.DEFAULT_PASSPHRASE
+			}
+			if opts.Curve == "" {
+				opts.Curve = "p256"
 			}
 
 			fileInfos, emptyFolders, totalFolders, err := croc.GetFilesInfo(selectedFiles, opts.ZipFolder, opts.GitIgnore, []string{})
