@@ -141,5 +141,5 @@ func makeReceiveTab(state *AppState) fyne.CanvasObject {
 		progressBar,
 	)
 
-	return container.NewPadded(content)
+	return container.NewPadded(container.NewVScroll(content))
 }
