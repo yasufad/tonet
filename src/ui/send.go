@@ -52,6 +52,19 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 
 	gitIgnoreCheck := widget.NewCheck("Respect .gitignore", nil)
 
+	customCodeCheck := widget.NewCheck("Use custom code", nil)
+	customCodeEntry := widget.NewEntry()
+	customCodeEntry.SetPlaceHolder("Leave empty for auto-generated code")
+	customCodeEntry.Disable()
+
+	customCodeCheck.OnChanged = func(checked bool) {
+		if checked {
+			customCodeEntry.Enable()
+		} else {
+			customCodeEntry.Disable()
+		}
+	}
+
 	codeLabel := widget.NewLabel("")
 	codeLabel.Wrapping = fyne.TextWrapWord
 
@@ -71,13 +84,18 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		go func() {
 			settings := loadSettings()
 
+			customCode := customCodeEntry.Text
+			if customCode == "" || !customCodeCheck.Checked {
+				customCode = utils.GetRandomName()
+			}
+
 			opts := croc.Options{
 				IsSender:       true,
 				RelayAddress:   settings.RelayAddress,
 				RelayAddress6:  settings.RelayAddress6,
 				RelayPorts:     []string{"9009", "9010", "9011", "9012", "9013"},
 				RelayPassword:  settings.RelayPassword,
-				SharedSecret:   utils.GetRandomName(),
+				SharedSecret:   customCode,
 				HashAlgorithm:  hashAlgoSelect.Selected,
 				ZipFolder:      zipFolderCheck.Checked,
 				GitIgnore:      gitIgnoreCheck.Checked,
@@ -134,6 +152,9 @@ func makeSendTab(state *AppState) fyne.CanvasObject {
 		container.NewHBox(widget.NewLabel("Hash:"), hashAlgoSelect),
 		zipFolderCheck,
 		gitIgnoreCheck,
+		widget.NewSeparator(),
+		customCodeCheck,
+		customCodeEntry,
 	)
 
 	content := container.NewVBox(
